@@ -5,8 +5,10 @@ import bcrypt from "bcrypt"
 import { log } from "node:console";
 import jwt from "jsonwebtoken"
 import { env } from "../config/env";
+import cookieparser from "cookie-parser";
 
 const router = express.Router();
+router.use(cookieparser());
 
 router.post("/signup", async (req: Request, res: Response, next: NextFunction) => {
     const body = req.body as user;
@@ -108,7 +110,15 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
         }
         else {
             if (await bcrypt.compare(body.password, _user.password)) {
-                const accessToken = jwt.sign({username: _user.username, role: "user", id: _user.id}, env.accessSecretToken);
+                const accessToken = jwt.sign({username: _user.username, role: "user", id: _user.id}, env.accessSecretToken, {expiresIn: "10m"});
+                const refreshToken = jwt.sign({username: _user.username, role: "user", id: _user.id}, env.refreshSecretToken, {expiresIn: "1d"});
+                res.cookie("refreshToken", {
+                    httpOnly: true,
+                    sameSite: 'none', 
+                    secure: true,
+                    maxAge: 24 * 60 * 60 * 1000
+                });
+
                 if (accessToken) {
                     logger.info("LOGIN - Log in successfully");
                     res.status(201).json({

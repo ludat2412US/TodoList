@@ -16,16 +16,14 @@ export function authenticationUser(
     if (token) {
         jwt.verify(token, env.accessSecretToken, (err, payload) => {
             if (err) {
-                logger.info("Verify accessToken: forbidden");
-                return res.status(401).json({
-                    message: "Forbidden"
-                })
+                logger.info("Verify accessToken: Error");
+                return res.status(401).json(err);
             }
             else {
                 const userPayload = payload as tokenPayload;
                 if (userPayload.role == "admin") {
                     req.body.payload = userPayload;
-                    next(); 
+                    return next(); 
                 }
 
                 if (reqId && userPayload.id != reqId) {
@@ -35,7 +33,7 @@ export function authenticationUser(
                     })
                 }
                 req.body.payload = userPayload;
-                next(); 
+                return next(); 
             }
         })
     }
