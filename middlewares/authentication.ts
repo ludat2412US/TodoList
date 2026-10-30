@@ -14,28 +14,27 @@ export function authenticationUser(
     const token = headers ? headers.split(" ")[1] : undefined;
 
     if (token) {
-        jwt.verify(token, env.accessSecretToken, (err, payload) => {
-            if (err) {
-                logger.info("Verify accessToken: Error");
-                return res.status(401).json(err);
-            }
-            else {
-                const userPayload = payload as tokenPayload;
-                if (userPayload.role == "admin") {
-                    req.body.payload = userPayload;
-                    return next(); 
-                }
-
-                if (reqId && userPayload.id != reqId) {
-                    logger.error("Verify accessToken: forbidden");
-                    return res.status(401).json({
-                        message: "Forbidden"
-                    })
-                }
+        try {
+            const payload = jwt.verify(token, env.accessSecretToken);
+            const userPayload = payload as tokenPayload;
+            if (userPayload.role == "admin") {
                 req.body.payload = userPayload;
                 return next(); 
             }
-        })
+
+            if (reqId && userPayload.id != reqId) {
+                logger.error("Verify accessToken: forbidden");
+                return res.status(401).json({
+                    message: "Forbidden"
+                })
+            }
+            req.body.payload = userPayload;
+            return next(); 
+        }
+        catch (err) {
+            logger.info("Verify accessToken: Error");
+            return res.status(401).json(err);
+        }
     }
     else {
         logger.error("Verify accessToken: unauthorized");

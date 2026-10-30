@@ -112,7 +112,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
             if (await bcrypt.compare(body.password, _user.password)) {
                 const accessToken = jwt.sign({username: _user.username, role: "user", id: _user.id}, env.accessSecretToken, {expiresIn: "10m"});
                 const refreshToken = jwt.sign({username: _user.username, role: "user", id: _user.id}, env.refreshSecretToken, {expiresIn: "1d"});
-                res.cookie("refreshToken", {
+                res.cookie("refreshToken", { //Save in database
                     httpOnly: true,
                     sameSite: 'none', 
                     secure: true,
